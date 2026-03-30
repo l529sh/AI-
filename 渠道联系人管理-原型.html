@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>渠道联系人管理 - 原型</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif; background: #f0f2f5; min-height: 100vh; }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 220px; background: #001529; color: white; padding: 20px 0; }
+        .sidebar-title { padding: 0 24px 16px; font-size: 16px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 8px; }
+        .sidebar-item { padding: 12px 24px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.65); transition: all 0.2s; }
+        .sidebar-item:hover, .sidebar-item.active { background: #1890ff; color: white; }
+        .main { flex: 1; padding: 24px; overflow-y: auto; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .page-title { font-size: 18px; font-weight: 600; color: #1f1f1f; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .btn-primary { padding: 8px 16px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-default { padding: 8px 16px; border: 1px solid #d9d9d9; background: white; border-radius: 4px; cursor: pointer; font-size: 14px; color: #333; }
+        .btn-default:hover { border-color: #40a9ff; color: #40a9ff; }
+        .btn-link { color: #1890ff; cursor: pointer; border: none; background: none; font-size: 14px; padding: 0 6px; }
+        .btn-link:hover { color: #40a9ff; }
+        .btn-sm { padding: 3px 8px; font-size: 12px; border: 1px solid #d9d9d9; background: white; border-radius: 4px; cursor: pointer; color: #666; }
+        .btn-sm:hover { border-color: #40a9ff; color: #40a9ff; }
+        .filter-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+        .filter-item { display: flex; align-items: center; gap: 6px; }
+        .filter-item label { font-size: 13px; color: #666; white-space: nowrap; }
+        .filter-item select, .filter-item input { padding: 6px 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; min-width: 140px; }
+        .search-box { display: flex; gap: 8px; margin-left: auto; }
+        .search-box input { padding: 6px 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; width: 180px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #fafafa; padding: 10px 10px; text-align: left; border-bottom: 1px solid #e8e8e8; color: #666; font-weight: 500; white-space: nowrap; }
+        td { padding: 10px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: top; }
+        tr:hover td { background: #f5f5f5; }
+        .contact-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; max-width: 200px; }
+        .contact-tag { display: inline-block; padding: 2px 6px; border-radius: 2px; font-size: 12px; background: #e6f7ff; color: #1890ff; white-space: nowrap; }
+        .contact-tag.more { background: #f0f0f0; color: #666; }
+        .sub-table-wrap { display: none; padding: 0 10px 10px 30px; }
+        .sub-table-wrap.open { display: block; }
+        .sub-contact-item { background: #f8f9fa; border: 1px solid #e8e8e8; border-radius: 4px; padding: 10px 14px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+        .sub-contact-info { flex: 1; }
+        .sub-contact-name { font-weight: 500; color: #333; font-size: 13px; }
+        .sub-contact-meta { color: #999; font-size: 12px; margin-top: 2px; }
+        .sub-contact-actions { display: flex; gap: 6px; }
+        .form-row { margin-bottom: 16px; }
+        .form-row label { display: block; font-size: 14px; color: #333; margin-bottom: 6px; font-weight: 500; }
+        .form-row label .required { color: #ff4d4f; margin-left: 2px; }
+        .form-row input, .form-row select { width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; }
+        .form-row input:focus, .form-row select:focus { border-color: #40a9ff; outline: none; box-shadow: 0 0 0 2px rgba(24,144,255,0.1); }
+        .form-footer { display: flex; justify-content: center; gap: 12px; margin-top: 24px; }
+        .contact-row { border: 1px solid #e8e8e8; border-radius: 4px; padding: 12px; margin-bottom: 8px; background: #fafafa; }
+        .contact-row .row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .contact-row .row-num { font-size: 12px; color: #999; font-weight: 500; }
+        .contact-row .btn-remove { color: #ff4d4f; cursor: pointer; border: none; background: none; font-size: 13px; }
+        .contact-row .row-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .contact-row .field-item label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+        .contact-row .field-item input { width: 100%; padding: 6px 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; }
+        .contact-row .field-item.full { grid-column: span 2; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-overlay.hidden { display: none; }
+        .modal-box { background: white; border-radius: 8px; width: 480px; max-width: 90vw; box-shadow: 0 6px 32px rgba(0,0,0,0.15); }
+        .modal-header { padding: 16px 20px; border-bottom: 1px solid #e8e8e8; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 16px; color: #1f1f1f; }
+        .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #999; line-height: 1; }
+        .modal-body { padding: 24px 20px; }
+        .modal-footer { padding: 12px 20px; border-top: 1px solid #e8e8e8; display: flex; justify-content: center; gap: 12px; }
+        .no-data { text-align: center; color: #999; padding: 40px; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .detail-item .label { font-size: 13px; color: #999; margin-bottom: 4px; }
+        .detail-item .value { font-size: 14px; color: #333; }
+        .detail-item.full { grid-column: span 2; }
+        .badge-yes { color: #52c41a; }
+        .badge-no { color: #ff4d4f; }
+        .toggle-btn { color: #1890ff; cursor: pointer; margin-right: 6px; font-weight: 600; font-size: 14px; border: none; background: none; padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="sidebar-title">直销系统</div>
+            <div class="sidebar-item">产品管理</div>
+            <div class="sidebar-item">渠道管理</div>
+            <div class="sidebar-item active">渠道联系人管理</div>
+            <div class="sidebar-item">信批管理</div>
+        </div>
+        <div class="main">
+            <!-- 列表页 -->
+            <div class="page active" id="page-list">
+                <div class="page-header">
+                    <div class="page-title">渠道联系人管理</div>
+                    <button class="btn-primary" onclick="showAdd()">+ 新增</button>
+                </div>
+                <div class="card">
+                    <div class="filter-row">
+                        <div class="filter-item">
+                            <label>渠道：</label>
+                            <select id="filterChannel" onchange="renderTable()">
+                                <option value="">全部</option>
+                                <option>蚂蚁基金</option>
+                                <option>天天基金</option>
+                                <option>雪球基金</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>产品：</label>
+                            <select id="filterProduct" onchange="renderTable()">
+                                <option value="">全部</option>
+                                <option>新能源主题A</option>
+                                <option>医疗健康B</option>
+                                <option>科技先锋C</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>是否有持仓客户：</label>
+                            <select id="filterHolding" onchange="renderTable()">
+                                <option value="">全部</option>
+                                <option value="yes">是</option>
+                                <option value="no">否</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>是否维护联系人：</label>
+                            <select id="filterHasContact" onchange="renderTable()">
+                                <option value="">全部</option>
+                                <option value="yes">是</option>
+                                <option value="no">否</option>
+                            </select>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="searchKeyword" placeholder="搜索渠道/产品/联系人" oninput="renderTable()">
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>渠道名称</th>
+                                    <th>产品名称</th>
+                                    <th>是否有持仓客户</th>
+                                    <th>持仓客户数量</th>
+                                    <th>联系人</th>
+                                    <th>创建人</th>
+                                    <th>创建时间</th>
+                                    <th>最近编辑人</th>
+                                    <th>最近编辑时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 新增/编辑页 -->
+            <div class="page" id="page-form">
+                <div class="page-header">
+                    <div class="page-title" id="formTitle">新增渠道+产品联系人</div>
+                </div>
+                <div class="card">
+                    <form id="contactForm" onsubmit="saveForm(event)">
+                        <div class="form-row">
+                            <label>渠道名称 <span class="required">*</span></label>
+                            <select id="channelName" required>
+                                <option value="">请选择渠道</option>
+                                <option>蚂蚁基金</option>
+                                <option>天天基金</option>
+                                <option>雪球基金</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>产品名称 <span class="required">*</span></label>
+                            <select id="productName" required>
+                                <option value="">请选择产品</option>
+                                <option>新能源主题A</option>
+                                <option>医疗健康B</option>
+                                <option>科技先锋C</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                <label>联系人列表 <span class="required">*</span> <span style="color:#999;font-weight:normal;font-size:12px;">（至少添加一个联系人）</span></label>
+                                <button type="button" class="btn-default" style="padding:4px 12px;font-size:13px;" onclick="addContactRow()">+ 添加联系人</button>
+                            </div>
+                            <div id="contactListContainer"></div>
+                        </div>
+                        <div class="form-footer">
+                            <button type="button" class="btn-default" onclick="showList()">取消</button>
+                            <button type="submit" class="btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 详情页 -->
+            <div class="page" id="page-detail">
+                <div class="page-header">
+                    <div class="page-title">渠道+产品联系人详情</div>
+                    <button class="btn-default" onclick="showList()">← 返回列表</button>
+                </div>
+                <div class="card">
+                    <div id="detailContent"></div>
+                    <div id="detailContacts"></div>
+                    <div class="form-footer">
+                        <button type="button" class="btn-default" onclick="showList()">取消</button>
+                        <button type="button" class="btn-primary" id="detailEditBtn">编辑</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div class="modal-overlay hidden" id="deleteModal" onclick="if(event.target===this)closeDelete()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>确认删除</h3>
+                <button class="modal-close" onclick="closeDelete()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="text-align:center;padding:12px 0;">确定要删除该联系人吗？删除后不可恢复。</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-default" onclick="closeDelete()">取消</button>
+                <button class="btn-primary" style="background:#ff4d4f;" onclick="confirmDelete()">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据
+        let data = [
+            { id: 'G1', channel: '蚂蚁基金', product: '新能源主题A', hasHolding: true, holdingCount: 128, createBy: '系统管理员', createTime: '2026-03-20', editBy: '运营小王', editTime: '2026-03-28', contacts: [
+                { id: 'C1', name: '张伟', phone: '13812345678', email: 'zhangwei@ant.com' },
+                { id: 'C2', name: '李娜', phone: '13987654321', email: 'lina@ant.com' },
+                { id: 'C3', name: '王强', phone: '13711112222', email: 'wangqiang@ant.com' },
+            ]},
+            { id: 'G2', channel: '天天基金', product: '新能源主题A', hasHolding: true, holdingCount: 56, createBy: '系统管理员', createTime: '2026-03-15', editBy: '运营小李', editTime: '2026-03-25', contacts: [
+                { id: 'C4', name: '赵丽', phone: '13566667777', email: 'zhaoli@天天.com' },
+            ]},
+            { id: 'G3', channel: '雪球基金', product: '医疗健康B', hasHolding: false, holdingCount: 0, createBy: '运营小王', createTime: '2026-03-10', editBy: '运营小王', editTime: '2026-03-22', contacts: [
+                { id: 'C5', name: '刘芳', phone: '13655556666', email: 'liufang@xueqiu.com' },
+                { id: 'C6', name: '陈明', phone: '13699998888', email: 'chenming@xueqiu.com' },
+            ]},
+            { id: 'G4', channel: '蚂蚁基金', product: '医疗健康B', hasHolding: true, holdingCount: 34, createBy: '运营小李', createTime: '2026-03-05', editBy: '运营小李', editTime: '2026-03-15', contacts: [
+                { id: 'C7', name: '孙静', phone: '13822223333', email: 'sunjing@ant.com' },
+            ]},
+            { id: 'G5', channel: '天天基金', product: '科技先锋C', hasHolding: false, holdingCount: 0, createBy: '运营小王', createTime: '2026-03-01', editBy: '运营小王', editTime: '2026-03-01', contacts: [
+                { id: 'C8', name: '周杰', phone: '13744445555', email: 'zhoujie@天天.com' },
+                { id: 'C9', name: '吴婷', phone: '13755556666', email: 'wuting@天天.com' },
+                { id: 'C10', name: '郑华', phone: '13766667777', email: 'zhenghua@天天.com' },
+                { id: 'C11', name: '冯磊', phone: '13777778888', email: 'fenglei@天天.com' },
+            ]},
+        ];
+
+        let currentGroupId = null;
+        let deleteTargetId = null;
+        let contactList = [];
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+        function showList() { showPage('page-list'); }
+
+        function showDetail(groupId) {
+            const g = data.find(x => x.id === groupId);
+            if (!g) return;
+            const holdingBadge = g.hasHolding ? '<span class="badge-yes">● 是</span>' : '<span class="badge-no">○ 否</span>';
+            document.getElementById('detailContent').innerHTML = '<div class="detail-grid">' +
+                '<div class="detail-item"><div class="label">渠道名称</div><div class="value">' + g.channel + '</div></div>' +
+                '<div class="detail-item"><div class="label">产品名称</div><div class="value">' + g.product + '</div></div>' +
+                '<div class="detail-item"><div class="label">是否有持仓客户</div><div class="value">' + holdingBadge + '</div></div>' +
+                '<div class="detail-item"><div class="label">持仓客户数量</div><div class="value">' + (g.holdingCount > 0 ? g.holdingCount + ' 人' : '-') + '</div></div>' +
+                '<div class="detail-item"><div class="label">创建人</div><div class="value">' + g.createBy + '</div></div>' +
+                '<div class="detail-item"><div class="label">创建时间</div><div class="value">' + g.createTime + '</div></div>' +
+                '<div class="detail-item"><div class="label">最近编辑人</div><div class="value">' + g.editBy + '</div></div>' +
+                '<div class="detail-item"><div class="label">最近编辑时间</div><div class="value">' + g.editTime + '</div></div>' +
+            '</div>';
+            document.getElementById('detailContacts').innerHTML = '<div style="font-size:14px;font-weight:500;margin-bottom:12px;">联系人列表（' + g.contacts.length + '人）</div>' +
+                g.contacts.map(c => '<div class="sub-contact-item">' +
+                    '<div class="sub-contact-info"><div class="sub-contact-name">' + c.name + '</div><div class="sub-contact-meta">' + c.phone + ' · ' + c.email + '</div></div>' +
+                    '<div class="sub-contact-actions">' +
+                        '<button class="btn-sm" onclick="doEditGroup(\'' + groupId + '\')">编辑</button>' +
+                        '<button class="btn-sm" style="color:#ff4d4f;" onclick="doDeleteContact(\'' + groupId + '\',\'' + c.id + '\')">删除</button>' +
+                    '</div>' +
+                '</div>').join('');
+            document.getElementById('detailEditBtn').onclick = () => doEditGroup(groupId);
+            showPage('page-detail');
+        }
+
+        function showAdd() {
+            currentGroupId = null;
+            contactList = [{ name: '', phone: '', email: '' }];
+            document.getElementById('formTitle').textContent = '新增渠道+产品联系人';
+            document.getElementById('contactForm').reset();
+            renderContactList();
+            showPage('page-form');
+        }
+
+        function doEditGroup(groupId) {
+            const g = data.find(x => x.id === groupId);
+            if (!g) return;
+            currentGroupId = groupId;
+            contactList = g.contacts.map(c => ({ ...c }));
+            document.getElementById('formTitle').textContent = '编辑渠道+产品联系人';
+            document.getElementById('channelName').value = g.channel;
+            document.getElementById('productName').value = g.product;
+            renderContactList();
+            showPage('page-form');
+        }
+
+        function addContactRow() {
+            contactList.push({ name: '', phone: '', email: '' });
+            renderContactList();
+        }
+
+        function removeContactRow(i) {
+            if (contactList.length > 1) {
+                contactList.splice(i, 1);
+                renderContactList();
+            }
+        }
+
+        function renderContactList() {
+            const el = document.getElementById('contactListContainer');
+            if (!contactList.length) {
+                el.innerHTML = '<div style="padding:16px;text-align:center;color:#999;font-size:13px;">暂无联系人，请点击"添加联系人"</div>';
+                return;
+            }
+            el.innerHTML = contactList.map((c, i) => {
+                const rmBtn = contactList.length > 1 ? '<button type="button" class="btn-remove" onclick="removeContactRow(' + i + ')">移除</button>' : '';
+                return '<div class="contact-row">' +
+                    '<div class="row-header"><span class="row-num">联系人 ' + (i+1) + '</span>' + rmBtn + '</div>' +
+                    '<div class="row-fields">' +
+                        '<div class="field-item"><label>姓名 <span class="required">*</span></label><input type="text" placeholder="联系人姓名" maxlength="20" value="' + c.name + '" oninput="contactList[' + i + '].name=this.value"></div>' +
+                        '<div class="field-item"><label>手机号 <span class="required">*</span></label><input type="text" placeholder="11位手机号" maxlength="11" value="' + c.phone + '" oninput="contactList[' + i + '].phone=this.value"></div>' +
+                        '<div class="field-item full"><label>邮箱 <span class="required">*</span></label><input type="email" placeholder="邮箱地址" value="' + c.email + '" oninput="contactList[' + i + '].email=this.value"></div>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        function saveForm(e) {
+            e.preventDefault();
+            const channel = document.getElementById('channelName').value;
+            const product = document.getElementById('productName').value;
+            if (!channel || !product) { alert('请选择渠道和产品'); return; }
+            const valid = contactList.filter(c => c.name && c.phone && c.email);
+            if (!valid.length) { alert('请至少添加一个联系人并填写完整'); return; }
+            for (const c of valid) {
+                if (!/^1\d{10}$/.test(c.phone)) { alert('手机号格式不正确'); return; }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email)) { alert('邮箱格式不正确'); return; }
+            }
+            const now = new Date().toISOString().split('T')[0];
+            const editor = '运营小王';
+            if (currentGroupId) {
+                const idx = data.findIndex(x => x.id === currentGroupId);
+                if (idx >= 0) {
+                    data[idx] = { ...data[idx], channel, product, contacts: valid.map((c, i) => ({ ...c, id: c.id || 'NEW' + Date.now() + i })), editBy: editor, editTime: now };
+                }
+                alert('保存成功');
+            } else {
+                const existIdx = data.findIndex(x => x.channel === channel && x.product === product);
+                if (existIdx >= 0) {
+                    data[existIdx].contacts = [...data[existIdx].contacts, ...valid.map((c, i) => ({ ...c, id: 'NEW' + Date.now() + i }))];
+                    data[existIdx].editBy = editor; data[existIdx].editTime = now;
+                    alert('保存成功，已追加 ' + valid.length + ' 位联系人');
+                } else {
+                    data.unshift({ id: 'G' + Date.now(), channel, product, hasHolding: false, holdingCount: 0, createBy: editor, createTime: now, editBy: editor, editTime: now, contacts: valid.map((c, i) => ({ ...c, id: 'NEW' + Date.now() + i })) });
+                    alert('新增成功，共 ' + valid.length + ' 位联系人');
+                }
+            }
+            renderTable();
+            showList();
+        }
+
+        function doDeleteGroup(groupId) {
+            if (!confirm('确定要删除该渠道+产品的所有联系人吗？删除后不可恢复。')) return;
+            data = data.filter(x => x.id !== groupId);
+            renderTable();
+            alert('删除成功');
+        }
+
+        function doDeleteContact(groupId, contactId) {
+            deleteTargetId = { groupId, contactId };
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeDelete() { document.getElementById('deleteModal').classList.add('hidden'); }
+
+        function confirmDelete() {
+            if (!deleteTargetId) return;
+            const { groupId, contactId } = deleteTargetId;
+            const g = data.find(x => x.id === groupId);
+            if (g) {
+                g.contacts = g.contacts.filter(c => c.id !== contactId);
+                g.editBy = '运营小王'; g.editTime = new Date().toISOString().split('T')[0];
+                if (g.contacts.length === 0) data = data.filter(x => x.id !== groupId);
+            }
+            renderTable();
+            closeDelete();
+            alert('删除成功');
+        }
+
+        function toggleGroup(groupId) {
+            const el = document.getElementById('sub-' + groupId);
+            const btn = document.getElementById('toggle-btn-' + groupId);
+            if (el.classList.contains('open')) {
+                el.classList.remove('open');
+                btn.textContent = '+';
+            } else {
+                el.classList.add('open');
+                btn.textContent = '−';
+            }
+        }
+
+        function renderTable() {
+            const channel = document.getElementById('filterChannel').value;
+            const product = document.getElementById('filterProduct').value;
+            const hasHolding = document.getElementById('filterHolding').value;
+            const hasContact = document.getElementById('filterHasContact').value;
+            const keyword = document.getElementById('searchKeyword').value.toLowerCase();
+
+            const filtered = data.filter(g => {
+                if (channel && g.channel !== channel) return false;
+                if (product && g.product !== product) return false;
+                if (hasHolding === 'yes' && !g.hasHolding) return false;
+                if (hasHolding === 'no' && g.hasHolding) return false;
+                if (hasContact === 'yes' && g.contacts.length === 0) return false;
+                if (hasContact === 'no' && g.contacts.length > 0) return false;
+                if (keyword) {
+                    const src = [g.channel, g.product, ...g.contacts.map(c => c.name)].join(' ').toLowerCase();
+                    if (!src.includes(keyword)) return false;
+                }
+                return true;
+            });
+
+            const tbody = document.getElementById('tableBody');
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="11" class="no-data">暂无数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(g => {
+                const visible = g.contacts.slice(0, 2);
+                const hidden = g.contacts.length - 2;
+                const holdingBadge = g.hasHolding ? '<span class="badge-yes">● 是</span>' : '<span class="badge-no">○ 否</span>';
+                const tags = visible.map(c => '<span class="contact-tag">' + c.name + '</span>').join('') + (hidden > 0 ? '<span class="contact-tag more">+' + hidden + '人</span>' : '');
+                const subRows = g.contacts.map(c =>
+                    '<div class="sub-contact-item" style="margin-left:0;">' +
+                        '<div class="sub-contact-info"><div class="sub-contact-name">' + c.name + '</div><div class="sub-contact-meta">' + c.phone + ' · ' + c.email + '</div></div>' +
+                        '<div class="sub-contact-actions">' +
+                            '<button class="btn-sm" onclick="doEditGroup(\'' + g.id + '\')">编辑</button>' +
+                            '<button class="btn-sm" style="color:#ff4d4f;" onclick="doDeleteContact(\'' + g.id + '\',\'' + c.id + '\')">删除</button>' +
+                        '</div>' +
+                    '</div>'
+                ).join('');
+
+                return '<tr>' +
+                    '<td><button class="toggle-btn" id="toggle-btn-' + g.id + '" onclick="toggleGroup(\'' + g.id + '\')">+</button></td>' +
+                    '<td>' + g.channel + '</td>' +
+                    '<td>' + g.product + '</td>' +
+                    '<td>' + holdingBadge + '</td>' +
+                    '<td>' + (g.holdingCount > 0 ? g.holdingCount + ' 人' : '-') + '</td>' +
+                    '<td><div class="contact-tags">' + tags + '</div></td>' +
+                    '<td>' + g.createBy + '</td>' +
+                    '<td>' + g.createTime + '</td>' +
+                    '<td>' + g.editBy + '</td>' +
+                    '<td>' + g.editTime + '</td>' +
+                    '<td><button class="btn-link" onclick="showDetail(\'' + g.id + '\')">详情</button><button class="btn-link" onclick="doEditGroup(\'' + g.id + '\')">编辑</button><button class="btn-link" style="color:#ff4d4f;" onclick="doDeleteGroup(\'' + g.id + '\')">删除</button></td>' +
+                '</tr>' +
+                '<tr><td colspan="11" style="padding:0;border:none;background:#fff;"><div class="sub-table-wrap" id="sub-' + g.id + '">' + subRows + '</div></td></tr>';
+            }).join('');
+        }
+
+        renderTable();
+    </script>
+</body>
+</html>
